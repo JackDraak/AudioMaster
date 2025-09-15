@@ -4,8 +4,12 @@ import CoreAudio
 
 class AudioInterfaceManager {
     static let shared = AudioInterfaceManager()
-    private var audioEngine: AVAudioEngine
+    var audioEngine: AVAudioEngine
     private var mixerNode: AVAudioMixerNode
+
+    var isEngineRunning: Bool {
+        return audioEngine.isRunning
+    }
     
     private init() {
         audioEngine = AVAudioEngine()
@@ -31,10 +35,10 @@ class AudioInterfaceManager {
         // Handle route changes
         switch reason {
         case .newDeviceAvailable:
-            print("New audio device connected")
+            AudioLogger.shared.logRouteChange(reason: "New device connected", inputs: [], outputs: [])
             updateAudioRoutes()
         case .oldDeviceUnavailable:
-            print("Audio device disconnected")
+            AudioLogger.shared.logRouteChange(reason: "Device disconnected", inputs: [], outputs: [])
             updateAudioRoutes()
         default:
             break
@@ -43,26 +47,50 @@ class AudioInterfaceManager {
     
     func updateAudioRoutes() {
         let session = AVAudioSession.sharedInstance()
-        
+
         // Get current route information
         let currentRoute = session.currentRoute
-        print("Current Audio Route:")
-        
-        for output in currentRoute.outputs {
-            print("Output Port: \(output.portType) - \(output.portName)")
+        AudioLogger.shared.logRouteChange(
+            reason: "Route update",
+            inputs: currentRoute.inputs.map { "\($0.portType) - \($0.portName)" },
+            outputs: currentRoute.outputs.map { "\($0.portType) - \($0.portName)" }
+        )
+    }
+
+    func updateAudioRouting(inputIndex: Int, outputIndex: Int, enabled: Bool) throws {
+        // In a real implementation, this would configure audio nodes and connections
+        // For now, we'll validate the routing and log the action
+
+        let session = AVAudioSession.sharedInstance()
+        let inputs = session.availableInputs ?? []
+        let outputs = session.currentRoute.outputs
+
+        guard inputIndex < inputs.count && outputIndex < outputs.count else {
+            throw AudioError.invalidConfiguration(reason: "Invalid device indices")
         }
-        
-        for input in currentRoute.inputs {
-            print("Input Port: \(input.portType) - \(input.portName)")
+
+        if enabled {
+            // Connect input to output through mixer node
+            let inputNode = audioEngine.inputNode
+            let outputNode = audioEngine.outputNode
+
+            // Configure audio format
+            let format = inputNode.outputFormat(forBus: 0)
+            audioEngine.connect(inputNode, to: mixerNode, format: format)
+            audioEngine.connect(mixerNode, to: outputNode, format: format)
+        } else {
+            // Disconnect the routing
+            audioEngine.disconnectNodeInput(mixerNode)
+        }
+
+        // Apply changes if engine is running
+        if audioEngine.isRunning {
+            audioEngine.prepare()
         }
     }
     
-    func startAudioEngine() {
-        do {
-            try audioEngine.start()
-        } catch {
-            print("Could not start audio engine: \(error)")
-        }
+    func startAudioEngine() throws {
+        try audioEngine.start()
     }
     
     func stopAudioEngine() {

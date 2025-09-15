@@ -38,17 +38,17 @@ class AudioViewModel: ObservableObject {
     
     func updateDeviceList() {
         let session = AVAudioSession.sharedInstance()
-        
+
         // Update input devices
         inputDevices = session.availableInputs?.map { port in
-            AudioDevice(id: port.uid, name: port.portName, type: port.portType)
+            AudioDevice(from: port)
         } ?? []
-        
+
         // Update output devices
         outputDevices = session.currentRoute.outputs.map { port in
-            AudioDevice(id: port.uid, name: port.portName, type: port.portType)
+            AudioDevice(from: port)
         }
-        
+
         // Update routing matrix
         routingMatrix = Array(repeating: Array(repeating: false, count: outputDevices.count),
                             count: inputDevices.count)
@@ -60,7 +60,7 @@ class AudioViewModel: ObservableObject {
             do {
                 try audioManager.startAudioEngine()
             } catch {
-                print("Failed to start monitoring: \(error)")
+                AudioLogger.shared.logError(.engineStartFailure(underlying: error))
                 isMonitoring = false
             }
         } else {
@@ -73,7 +73,25 @@ class AudioViewModel: ObservableObject {
     }
     
     func updateRouting(input: Int, output: Int, isEnabled: Bool) {
+        guard input < routingMatrix.count && output < routingMatrix[input].count else {
+            AudioLogger.shared.logError(.invalidConfiguration(reason: "Invalid routing matrix indices"))
+            return
+        }
+
         routingMatrix[input][output] = isEnabled
+
         // Implement actual audio routing update
+        do {
+            try audioManager.updateAudioRouting(inputIndex: input, outputIndex: output, enabled: isEnabled)
+            AudioLogger.shared.logRouteChange(
+                reason: "Manual routing update",
+                inputs: [inputDevices[input].name],
+                outputs: [outputDevices[output].name]
+            )
+        } catch {
+            AudioLogger.shared.logError(.routingError(description: "Failed to update routing: \(error.localizedDescription)"))
+            // Revert the UI change
+            routingMatrix[input][output] = !isEnabled
+        }
     }
 }

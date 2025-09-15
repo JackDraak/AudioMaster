@@ -34,12 +34,17 @@ class AudioInterfaceManagerTests: XCTestCase {
     func testAudioEngineStartStop() {
         XCTAssertNoThrow(try manager.startAudioEngine())
         XCTAssertTrue(manager.isEngineRunning)
-        
+
         manager.stopAudioEngine()
         XCTAssertFalse(manager.isEngineRunning)
     }
     
     func testMultiRouteConfiguration() {
         // Test multiple output configuration
+        let initialRouteCount = AVAudioSession.sharedInstance().currentRoute.outputs.count
+        XCTAssertGreaterThanOrEqual(initialRouteCount, 1, "Should have at least one output route")
+
+        // Test route update functionality
+        XCTAssertNoThrow(manager.updateAudioRoutes())
     }
 }

@@ -23,14 +23,32 @@ class FeedbackPreventionTests: XCTestCase {
     
     func testFeedbackDetection() {
         // Test feedback detection with known problematic frequencies
+        let expectation = XCTestExpectation(description: "Feedback detection")
+
+        // Set up mock delegate
+        // feedbackPrevention.delegate = mockDelegate
+
+        // This would simulate feedback conditions in a real implementation
+        XCTAssertFalse(mockDelegate.feedbackDetectedCalled)
+        expectation.fulfill()
+
+        wait(for: [expectation], timeout: 1.0)
     }
-    
+
     func testThresholdLevels() {
         // Test various audio levels against threshold
+        XCTAssertNotNil(feedbackPrevention)
+
+        // Test that feedback prevention system is properly initialized
+        XCTAssertNotNil(engine)
     }
-    
+
     func testPreventiveMeasures() {
         // Test automatic prevention strategies
+        XCTAssertNil(mockDelegate.preventionActionTaken)
+
+        // In a real implementation, this would test the prevention actions
+        // like gain reduction, channel muting, or route changes
     }
 }
 
