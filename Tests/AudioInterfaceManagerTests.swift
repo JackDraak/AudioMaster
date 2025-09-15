@@ -1,17 +1,20 @@
 import XCTest
+import AVFoundation
 @testable import AudioMaster
 
 class AudioInterfaceManagerTests: XCTestCase {
     var manager: AudioInterfaceManager!
-    
+    var mockManager: MockAudioInterfaceManager!
+
     override func setUp() {
         super.setUp()
         manager = AudioInterfaceManager.shared
+        mockManager = MockAudioInterfaceManager()
     }
-    
+
     override func tearDown() {
-        // Clean up any test audio routes
-        manager = nil
+        manager?.stopAudioEngine()
+        mockManager = nil
         super.tearDown()
     }
     
@@ -46,5 +49,41 @@ class AudioInterfaceManagerTests: XCTestCase {
 
         // Test route update functionality
         XCTAssertNoThrow(manager.updateAudioRoutes())
+    }
+
+    func testMockManagerRouting() {
+        // Test routing with mock manager
+        XCTAssertFalse(mockManager.updateAudioRoutingCalled)
+
+        XCTAssertNoThrow(try mockManager.updateAudioRouting(inputIndex: 0, outputIndex: 0, enabled: true))
+        XCTAssertTrue(mockManager.updateAudioRoutingCalled)
+        XCTAssertEqual(mockManager.lastRoutingCall?.inputIndex, 0)
+        XCTAssertEqual(mockManager.lastRoutingCall?.outputIndex, 0)
+        XCTAssertEqual(mockManager.lastRoutingCall?.enabled, true)
+    }
+
+    func testMockManagerInvalidIndices() {
+        XCTAssertThrowsError(try mockManager.updateAudioRouting(inputIndex: -1, outputIndex: 0, enabled: true)) { error in
+            XCTAssertTrue(error is AudioError)
+        }
+    }
+
+    func testLevelMonitoring() {
+        let inputLevels = manager.getInputLevels()
+        let outputLevels = manager.getOutputLevels()
+
+        XCTAssertFalse(inputLevels.isEmpty)
+        XCTAssertFalse(outputLevels.isEmpty)
+
+        // Test levels are within valid range
+        for level in inputLevels {
+            XCTAssertGreaterThanOrEqual(level, 0.0)
+            XCTAssertLessThanOrEqual(level, 1.0)
+        }
+
+        for level in outputLevels {
+            XCTAssertGreaterThanOrEqual(level, 0.0)
+            XCTAssertLessThanOrEqual(level, 1.0)
+        }
     }
 }

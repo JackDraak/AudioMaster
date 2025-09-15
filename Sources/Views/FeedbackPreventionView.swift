@@ -70,29 +70,3 @@ struct ThresholdSlider: View {
     }
 }
 
-struct AudioDevice: Identifiable {
-    let id: String
-    let name: String
-    let type: AVAudioSession.Port
-}
-
-struct DeviceRowView: View {
-    let device: AudioDevice
-    let isInput: Bool
-    
-    var body: some View {
-        HStack {
-            Image(systemName: isInput ? "mic" : "speaker.wave.2")
-                .foregroundColor(.blue)
-            
-            VStack(alignment: .leading) {
-                Text(device.name)
-                    .font(.body)
-                Text(device.type.rawValue)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-        .padding(.vertical, 4)
-    }
-}

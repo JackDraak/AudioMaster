@@ -12,11 +12,14 @@ class AudioViewModel: ObservableObject {
     
     private let audioManager: AudioInterfaceManager
     private let feedbackPrevention: FeedbackPrevention
-    
+    private var levelTimer: Timer?
+    private var levelUpdateQueue = DispatchQueue(label: "com.audiomaster.levels", qos: .userInteractive)
+
     init() {
         audioManager = AudioInterfaceManager.shared
         feedbackPrevention = FeedbackPrevention(engine: audioManager.audioEngine)
         setupAudioMonitoring()
+        startLevelMonitoring()
     }
     
     func setupAudioMonitoring() {
@@ -70,6 +73,32 @@ class AudioViewModel: ObservableObject {
     
     func showSettings() {
         // Implement settings sheet presentation
+    }
+
+    private func startLevelMonitoring() {
+        levelTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.updateLevels()
+        }
+    }
+
+    private func updateLevels() {
+        levelUpdateQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            // Simulate level monitoring for now
+            let inputLevels = (0..<self.inputDevices.count).map { _ in Float.random(in: 0...1) }
+            let outputLevels = (0..<self.outputDevices.count).map { _ in Float.random(in: 0...1) }
+
+            DispatchQueue.main.async {
+                self.inputLevels = inputLevels
+                self.outputLevels = outputLevels
+            }
+        }
+    }
+
+    deinit {
+        levelTimer?.invalidate()
+        NotificationCenter.default.removeObserver(self)
     }
     
     func updateRouting(input: Int, output: Int, isEnabled: Bool) {

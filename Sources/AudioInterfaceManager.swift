@@ -6,6 +6,7 @@ class AudioInterfaceManager {
     static let shared = AudioInterfaceManager()
     var audioEngine: AVAudioEngine
     private var mixerNode: AVAudioMixerNode
+    private var levelMonitors: [Int: AVAudioPlayerNode] = [:]
 
     var isEngineRunning: Bool {
         return audioEngine.isRunning
@@ -87,6 +88,24 @@ class AudioInterfaceManager {
         if audioEngine.isRunning {
             audioEngine.prepare()
         }
+    }
+
+    func getInputLevels() -> [Float] {
+        let inputNode = audioEngine.inputNode
+        let format = inputNode.outputFormat(forBus: 0)
+        let channelCount = Int(format.channelCount)
+
+        // Return simulated levels for now
+        return (0..<channelCount).map { _ in Float.random(in: 0...1) }
+    }
+
+    func getOutputLevels() -> [Float] {
+        let outputNode = audioEngine.outputNode
+        let format = outputNode.inputFormat(forBus: 0)
+        let channelCount = Int(format.channelCount)
+
+        // Return simulated levels for now
+        return (0..<channelCount).map { _ in Float.random(in: 0...1) }
     }
     
     func startAudioEngine() throws {

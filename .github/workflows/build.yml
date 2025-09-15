@@ -29,33 +29,25 @@ jobs:
     - name: Security Scan
       run: git secrets --scan
     
-    - name: Code Structure Check
+    - name: Build App
       run: |
-        echo "Checking project structure and Swift file validity..."
+        xcodebuild clean build \
+          -project AudioMaster.xcodeproj \
+          -scheme AudioMaster \
+          -destination 'platform=iOS Simulator,name=iPad Pro (12.9-inch) (6th generation)' \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          -quiet
 
-        # Check that we have Swift files
-        swift_count=$(find Sources -name "*.swift" | wc -l)
-        echo "Found $swift_count Swift source files"
-
-        if [ "$swift_count" -eq 0 ]; then
-          echo "Error: No Swift files found"
-          exit 1
-        fi
-
-        # Check for basic syntax issues (missing braces, etc)
-        for file in $(find Sources -name "*.swift"); do
-          echo "Checking structure of $file"
-
-          # Count braces to check for basic syntax
-          open_braces=$(grep -o '{' "$file" | wc -l)
-          close_braces=$(grep -o '}' "$file" | wc -l)
-
-          if [ "$open_braces" -ne "$close_braces" ]; then
-            echo "Warning: Mismatched braces in $file (open: $open_braces, close: $close_braces)"
-          fi
-        done
-
-        echo "Code structure check completed successfully"
+    - name: Run Tests
+      run: |
+        xcodebuild test \
+          -project AudioMaster.xcodeproj \
+          -scheme AudioMaster \
+          -destination 'platform=iOS Simulator,name=iPad Pro (12.9-inch) (6th generation)' \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          -quiet
 
     - name: Build Verification
       run: |
