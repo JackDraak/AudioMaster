@@ -23,27 +23,35 @@ jobs:
     - name: Security Scan
       run: git secrets --scan
 
-    - name: Validate AudioMaster Structure
+    - name: Generate Proper Xcode Project
       run: |
-        echo "🎯 Validating AudioMaster iPad App"
+        echo "🔨 Generating proper Xcode project from Package.swift"
+        swift package generate-xcodeproj
 
-        # Verify core structure
-        test -d Sources && echo "✅ Sources directory" || exit 1
-        test -d Tests && echo "✅ Tests directory" || exit 1
-        test -f Package.swift && echo "✅ Swift Package" || exit 1
-        test -f Info.plist && echo "✅ iOS Configuration" || exit 1
+    - name: Build Real iOS App
+      run: |
+        echo "📱 Building AudioMaster iPad app for iOS Simulator"
+        xcodebuild clean build \
+          -project AudioMaster.xcodeproj \
+          -scheme AudioMaster-Package \
+          -destination 'platform=iOS Simulator,name=iPad Pro (12.9-inch) (6th generation)' \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO
 
-        # Count components
-        echo "📱 Swift files: $(find Sources -name "*.swift" | wc -l)"
-        echo "🧪 Test files: $(find Tests -name "*.swift" | wc -l)"
+    - name: Run Unit Tests
+      run: |
+        echo "🧪 Running AudioMaster test suite"
+        xcodebuild test \
+          -project AudioMaster.xcodeproj \
+          -scheme AudioMaster-Package \
+          -destination 'platform=iOS Simulator,name=iPad Pro (12.9-inch) (6th generation)' \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO
 
-        # Verify key components
-        test -f Sources/AudioInterfaceManager.swift && echo "✅ Audio engine core" || exit 1
-        test -f Sources/Core/AudioDevice.swift && echo "✅ Device modeling" || exit 1
-        test -f Sources/Views/ContentView.swift && echo "✅ SwiftUI interface" || exit 1
-        test -f Sources/Core/SecureAudioBuffer.swift && echo "✅ Security implementation" || exit 1
-
-        echo "🚀 AudioMaster validation successful"
+    - name: Validate Build Output
+      run: |
+        echo "✅ Build completed successfully - AudioMaster.app created"
+        find . -name "*.app" -exec echo "📱 Found app bundle: {}" \;
 
     - name: Code Quality Check
       run: |
