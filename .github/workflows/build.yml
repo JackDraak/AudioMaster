@@ -11,7 +11,7 @@ jobs:
     runs-on: macos-latest  # Using macOS runner for iOS/iPad development
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0  # For git-secrets scanning
     
@@ -48,21 +48,25 @@ jobs:
           CODE_SIGNING_REQUIRED=NO
     
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
         path: |
           build/
           *.xcarchive
         retention-days: 14
+        compression-level: 9  # Maximum compression
+        overwrite: true      # Always use latest version
     
     - name: Generate Checksum
       run: |
         find build/ -type f -exec sha256sum {} \; > build-checksums.txt
         
     - name: Upload Checksums
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-checksums
         path: build-checksums.txt
         retention-days: 14
+        compression-level: 9  # Maximum compression
+        overwrite: true      # Always use latest version
