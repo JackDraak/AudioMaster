@@ -87,7 +87,7 @@ jobs:
         echo "Lines of code: $(find Sources -name "*.swift" -exec wc -l {} \; | awk '{sum+=$1} END {print sum}')" >> project-report.txt
 
     - name: Upload Project Report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: project-report
         path: project-report.txt
